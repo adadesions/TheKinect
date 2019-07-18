@@ -127,18 +127,30 @@ int main()
 
         cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data).copyTo(depthmatUndistorted);
         cv::Mat(depth2rgb.height, depth2rgb.width, CV_32FC1, depth2rgb.data).copyTo(rgbd2);
-        Mat depthReal = depthmatUndistorted / 4500.0f;
+        Mat depthReal = depthmatUndistorted / 4096.0f;
         Mat depth4Draw = depthReal.clone();
 
         //Region of Interest Init
-        int offset_h = 0;
-        int offset_w = -100;
-        int roi_h = (depth->height/2)+offset_h;
-        int roi_w = (depth->width/2)+offset_w;
-        Rect myROI(roi_h, roi_w, 100, 100);
+        int offset_h = -50;
+        int offset_w = -50;
+        int roi_h = (undistorted.height/2)+offset_h;
+        int roi_w = (undistorted.width/2)+offset_w;
+        int boxSize = 100;
+        Rect myROI(roi_w, roi_h, boxSize, boxSize);
         Mat ROI = depthReal(myROI);
 
-        //Drawing a red reactangle on depth image
+        double minVal; 
+        double maxVal; 
+        Point minLoc; 
+        Point maxLoc;
+
+        minMaxIdx(ROI, &minVal, &maxVal);
+        double max_cm = maxVal*409.6f;
+        double min_cm = minVal*409.6f;
+        cout << "max val : " << max_cm << " cm" << endl;
+        cout << "min val: " << min_cm << " cm" << endl;
+
+        //Drawing a white reactangle on depth image
         rectangle(depth4Draw, myROI, Scalar(255, 255, 255));
 
         cv::imshow("undistorted", depth4Draw);
