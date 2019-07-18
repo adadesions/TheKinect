@@ -79,8 +79,7 @@ int main()
 
     //! [listeners]
     libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color |
-                                                libfreenect2::Frame::Depth |
-                                                libfreenect2::Frame::Ir);
+                                                libfreenect2::Frame::Depth);
     libfreenect2::FrameMap frames;
 
     dev->setColorFrameListener(&listener);
@@ -99,6 +98,7 @@ int main()
     libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4), depth2rgb(1920, 1080 + 2, 4);
     //! [registration setup]
 
+    // Start Procressing
     Mat rgbmat, depthmat, depthmatUndistorted, rgbd, rgbd2;
     int histSize = 10;
     float range[] = {0, 1};
@@ -108,6 +108,7 @@ int main()
     Mat g_hist;
     int hist_w = 512, hist_h = 300;
     int bin_w = cvRound( (double) hist_w/histSize );
+
 
     //! [loop start]
     while (!protonect_shutdown)
@@ -120,21 +121,30 @@ int main()
         cv::Mat(rgb->height, rgb->width, CV_8UC4, rgb->data).copyTo(rgbmat);
         cv::Mat(depth->height, depth->width, CV_32FC1, depth->data).copyTo(depthmat);
 
-        // cv::imshow("rgb", rgbmat);
-        // cv::imshow("depth", depthmat / 4096.0f);
-
         //! [registration]
         registration->apply(rgb, depth, &undistorted, &registered, true, &depth2rgb);
         //! [registration]
 
         cv::Mat(undistorted.height, undistorted.width, CV_32FC1, undistorted.data).copyTo(depthmatUndistorted);
-        cv::Mat(registered.height, registered.width, CV_8UC4, registered.data).copyTo(rgbd);
         cv::Mat(depth2rgb.height, depth2rgb.width, CV_32FC1, depth2rgb.data).copyTo(rgbd2);
-        cv::Mat depthReal = depthmatUndistorted / 4500.0f;
+        Mat depthReal = depthmatUndistorted / 4500.0f;
+        Mat depth4Draw = depthReal.clone();
 
-        cv::imshow("undistorted", depthReal);
-        // cv::imshow("registered", rgbd);
-        // cv::imshow("depth2RGB", rgbd2 / 4096.0f);
+        //Region of Interest Init
+        int offset_h = 0;
+        int offset_w = -100;
+        int roi_h = (depth->height/2)+offset_h;
+        int roi_w = (depth->width/2)+offset_w;
+        Rect myROI(roi_h, roi_w, 100, 100);
+        Mat ROI = depthReal(myROI);
+
+        //Drawing a red reactangle on depth image
+        rectangle(depth4Draw, myROI, Scalar(255, 255, 255));
+
+        cv::imshow("undistorted", depth4Draw);
+        cv::imshow("ROI", ROI);
+
+        // Histogram Section
         calcHist(&depthReal, 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate);
         Mat histImage( hist_h, hist_w, CV_32FC3, Scalar( 0, 0, 0 ) );
         normalize(g_hist, g_hist, 10, histImage.rows, NORM_MINMAX, -1, Mat() );
@@ -144,9 +154,9 @@ int main()
             Point( bin_w*(i), hist_h - cvRound(g_hist.at<float>(i)) ),
             Scalar( 0, 0, 255), 2, 8, 0  );
         }
-        // std::cout << depthmatUndistorted/4096.0f;
         imshow("calcHist", histImage );
 
+        // To close program by ESC
         int key = cv::waitKey(1);
         protonect_shutdown = protonect_shutdown || (key > 0 && ((key & 0xFF) == 27)); // shutdown on escape
 
