@@ -1,16 +1,3 @@
-/*
--- Georgia Tech 2016 Spring
---
--- This is a sample code to show how to use the libfreenet2 with OpenCV
---
--- The code will streams RGB, IR and Depth images from an Kinect sensor.
--- To use multiple Kinect sensor, simply initial other "listener" and "frames"
--- This code refered from sample code provided from libfreenet2: Protonect.cpp
--- https://github.com/OpenKinect/libfreenect2
--- and another discussion from: http://answers.opencv.org/question/76468/opencvkinect-onekinect-for-windows-v2linuxlibfreenect2/
--- Contact: Chih-Yao Ma at <cyma@gatech.edu>
-*/
-
 //! [headers]
 #include <iostream>
 #include <stdio.h>
@@ -139,9 +126,9 @@ int main()
         Rect myROI(roi_w, roi_h, boxSize, boxSize);
         Mat ROI = depthReal(myROI);
 
-        double minVal; 
-        double maxVal; 
-        Point minLoc; 
+        double minVal;
+        double maxVal;
+        Point minLoc;
         Point maxLoc;
 
         minMaxIdx(ROI, &minVal, &maxVal);
